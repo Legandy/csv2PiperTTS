@@ -35,7 +35,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 PIPER_EXE = os.path.join(SCRIPT_DIR, "piper.exe")
 MODEL_PATH = os.path.join(SCRIPT_DIR, f"{VOICE_MODEL_NAME}.onnx")
-VOICE_MODEL_CONFIG = os.path.join(SCRIPT_DIR, f"{VOICE_MODEL_NAME}.json")
+VOICE_MODEL_CONFIG = os.path.join(SCRIPT_DIR, f"{VOICE_MODEL_NAME}.onnx.json")
 OUTPUT_PATH = os.path.join(SCRIPT_DIR, OUTPUT_DIR)
 
 INPUT_FILE_PATH = os.path.join(SCRIPT_DIR, INPUT_FILE)

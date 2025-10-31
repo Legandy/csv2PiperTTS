@@ -7,7 +7,7 @@ This repository contains the piper\_batch.py script to automate the generation o
 Before you begin, ensure you have the following installed and accessible in your system's PATH:
 
 1. **Piper TTS**: The main synthesis executable (piper.exe) and your corresponding **voice model files**.  
-   **⚠️ IMPORTANT MODEL NOTE:** The voice model must be in the **.onnx format** (Open Neural Network Exchange), paired with its necessary **.json configuration** file. Other model formats are not compatible with this setup.  
+   **⚠️ IMPORTANT MODEL NOTE:** The voice model must be in the **.onnx format** (Open Neural Network Exchange), paired with its necessary **.onnx.json configuration** file. Other model formats are not compatible with this setup.  
 2. **FFmpeg**: A recent, full-featured version of FFmpeg (Version 8.0 or later is recommended).  
 3. **Python 3**: To run the batch synthesis script.
 
@@ -18,14 +18,14 @@ This is the recommended file structure. All required files should be placed in t
 ├── piper\_batch.py          \# The batch script  
 ├── piper.exe               \# The Piper executable  
 ├── YourModelName.onnx      \# The Piper voice model (from VOICE\_MODEL\_NAME)  
-├── YourModelName.json      \# The Piper model config  
+├── YourModelName.onnx.json      \# The Piper model config  
 ├── voice\_lines.csv         \# The input file (from INPUT\_FILE)  
 └── PiperTTS\_output/        \# The output folder (from OUTPUT\_DIR, created upon run)  
     ├── 943635243.wav  
     ├── 102938475.wav  
     └── ...
 
-**⚠️ IMPORTANT:** The VOICE\_MODEL\_NAME you set in the script must correspond to both the **.onnx** model file and the **.json** configuration file being present in the root directory.
+**⚠️ IMPORTANT:** The VOICE\_MODEL\_NAME you set in the script must correspond to both the **.onnx** model file and the **.onnx.json** configuration file being present in the root directory.
 
 ## **1\. Batch Synthesis (piper\_batch.py)**
 
