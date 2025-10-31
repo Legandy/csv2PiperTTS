@@ -16,7 +16,6 @@ Before you begin, ensure you have the following installed and accessible in your
 This is the recommended file structure. All required files should be placed in the root directory where you execute piper\_batch.py.  
 /Your\_Project\_Root  
 ├── piper\_batch.py          \# The batch script  
-├── piper.exe               \# The Piper executable  
 ├── YourModelName.onnx      \# The Piper voice model (from VOICE\_MODEL\_NAME)  
 ├── YourModelName.onnx.json      \# The Piper model config  
 ├── voice\_lines.csv         \# The input file (from INPUT\_FILE)  

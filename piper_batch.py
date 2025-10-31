@@ -8,32 +8,42 @@ import sys
 
 INPUT_FILE = "voice_lines.csv"
 OUTPUT_DIR = "PiperTTS_output"
-VOICE_MODEL_NAME = "voice_model"
+VOICE_MODEL_NAME = "SubnauticaPDA"
 DELIMITER = ";"  # Separator for ID;Text in your CSV
 
 # AUDIO SETTINGS
-PIPER_VOLUME = "1.5"  # Volume multiplier (Piper's internal volume)
+# Setting it higher can result in clipping, better use the loudnorm filter instead.
+PIPER_VOLUME = "1.0"
 
-# --- FFmpeg SPEED CONTROL ---
+# # FFmpeg Settings
+ENABLE_POST_PROCESSING = True  # Set to True to enable FFmpeg filters
+
+# FFmpeg SPEED CONTROL
 # This adjusts the playback speed of the generated audio.
-# 1.0 = Normal Speed
-FFMPEG_SPEED_MULTIPLIER = "1"
-
-ENABLE_POST_PROCESSING = True  # Set to True to enable FFmpeg filters (Recommended)
+# 1.0 = Normal Speed.
+FFMPEG_SPEED_MULTIPLIER = "0.9"
 
 # FFmpeg Filter Chain
 # 1. pan=stereo...: Converts Mono input to Stereo output.
-# 2. loudnorm: Normalizes to LUFS (integrated loudness) with a true peak ceiling of -1.0 dB.
+# 2. loudnorm: Normalizes to LUFS (integrated loudness) with a true peak ceiling.
+#
+# LOUDNESS TARGETS:
+# I (Integrated Loudness)
+# TP (True Peak) is set to -1.0 dBTP (safe peak ceiling)
+# LRA (Loudness Range) is set high to allow for dynamic speech.
 FFMPEG_AUDIO_FILTERS = "pan=stereo|c0=c0|c1=c0,loudnorm=I=-10:TP=-1.0:LRA=11"
 
 # ====================================================================
 # --- END CONFIGURATION ---\
 # ====================================================================
 
-# Construct paths
+# Executables are assumed to be in the system PATH
+PIPER_EXE = "piper.exe"
+FFMPEG_EXE = "ffmpeg"
+
+# Construct paths for files relative to the script's directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-PIPER_EXE = os.path.join(SCRIPT_DIR, "piper.exe")
 MODEL_PATH = os.path.join(SCRIPT_DIR, f"{VOICE_MODEL_NAME}.onnx")
 VOICE_MODEL_CONFIG = os.path.join(SCRIPT_DIR, f"{VOICE_MODEL_NAME}.onnx.json")
 OUTPUT_PATH = os.path.join(SCRIPT_DIR, OUTPUT_DIR)
@@ -74,7 +84,7 @@ def run_synthesis(line_id, text):
         return False
     except FileNotFoundError:
         print(f"    ❌ Piper Error: Executable '{PIPER_EXE}' not found.")
-        print("       Please ensure 'piper.exe' is in the script's directory.")
+        print("       Please ensure the directory containing 'piper.exe' is added to your system's PATH environment variable.")
         return False
 
     if not ENABLE_POST_PROCESSING:
@@ -86,7 +96,6 @@ def run_synthesis(line_id, text):
             return False
 
     # --- 2. FFmpeg Post-Processing Command (outputs to final path) ---
-    ffmpeg_exe = "ffmpeg" # Relies on the newly fixed system PATH
 
     # Dynamically prepend atempo filter if speed is adjusted
     speed_filter = ""
@@ -97,7 +106,7 @@ def run_synthesis(line_id, text):
     full_filter_chain = speed_filter + FFMPEG_AUDIO_FILTERS
 
     ffmpeg_command = [
-        ffmpeg_exe,
+        FFMPEG_EXE,
         "-y",  # Overwrite output file without asking
         "-i", TEMP_WAV_FILE,
         "-filter:a", full_filter_chain,
@@ -122,8 +131,8 @@ def run_synthesis(line_id, text):
             os.remove(TEMP_WAV_FILE)
         return False
     except FileNotFoundError:
-        print(f"    ❌ FFmpeg Error: Executable '{ffmpeg_exe}' not found.")
-        print("       The system path is incorrect. Check your Path settings.")
+        print(f"    ❌ FFmpeg Error: Executable '{FFMPEG_EXE}' not found.")
+        print("       Please ensure the FFmpeg directory is added to your system's PATH environment variable.")
         if os.path.exists(TEMP_WAV_FILE):
             os.remove(TEMP_WAV_FILE)
         return False
@@ -141,11 +150,7 @@ def main():
         os.makedirs(OUTPUT_PATH)
         print(f"Created output directory: {OUTPUT_PATH}")
 
-    # --- Check for required files/executables ---
-    if not os.path.exists(PIPER_EXE):
-        print(f"❌ Error: Piper executable not found at {PIPER_EXE}")
-        sys.exit(1)
-
+    # --- Check for required model files (Executables are now assumed to be in PATH) ---
     if not os.path.exists(MODEL_PATH):
         print(f"❌ Error: Model file not found.")
         print(f"       Looking for: {MODEL_PATH}")
