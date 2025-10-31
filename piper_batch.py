@@ -8,7 +8,7 @@ import sys
 
 INPUT_FILE = "voice_lines.csv"
 OUTPUT_DIR = "PiperTTS_output"
-VOICE_MODEL_NAME = "SubnauticaPDA"
+VOICE_MODEL_NAME = "voice_model"
 DELIMITER = ";"  # Separator for ID;Text in your CSV
 
 # AUDIO SETTINGS
@@ -17,7 +17,7 @@ PIPER_VOLUME = "1.5"  # Volume multiplier (Piper's internal volume)
 # --- FFmpeg SPEED CONTROL ---
 # This adjusts the playback speed of the generated audio.
 # 1.0 = Normal Speed
-FFMPEG_SPEED_MULTIPLIER = "0.9"
+FFMPEG_SPEED_MULTIPLIER = "1"
 
 ENABLE_POST_PROCESSING = True  # Set to True to enable FFmpeg filters (Recommended)
 
