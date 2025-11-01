@@ -8,7 +8,7 @@ import sys
 
 INPUT_FILE = "voice_lines.csv"
 OUTPUT_DIR = "PiperTTS_output"
-VOICE_MODEL_NAME = "SubnauticaPDA"
+VOICE_MODEL_NAME = "voice_model"
 DELIMITER = ";"  # Separator for ID;Text in your CSV
 
 # AUDIO SETTINGS
@@ -21,7 +21,7 @@ ENABLE_POST_PROCESSING = True  # Set to True to enable FFmpeg filters
 # FFmpeg SPEED CONTROL
 # This adjusts the playback speed of the generated audio.
 # 1.0 = Normal Speed.
-FFMPEG_SPEED_MULTIPLIER = "0.9"
+FFMPEG_SPEED_MULTIPLIER = "1.0"
 
 # FFmpeg Filter Chain
 # 1. pan=stereo...: Converts Mono input to Stereo output.
@@ -31,7 +31,7 @@ FFMPEG_SPEED_MULTIPLIER = "0.9"
 # I (Integrated Loudness)
 # TP (True Peak) is set to -1.0 dBTP (safe peak ceiling)
 # LRA (Loudness Range) is set high to allow for dynamic speech.
-FFMPEG_AUDIO_FILTERS = "pan=stereo|c0=c0|c1=c0,loudnorm=I=-10:TP=-1.0:LRA=11"
+FFMPEG_AUDIO_FILTERS = "pan=stereo|c0=c0|c1=c0,loudnorm=I=-16:TP=-1.0:LRA=11"
 
 # ====================================================================
 # --- END CONFIGURATION ---\
