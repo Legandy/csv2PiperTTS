@@ -7,7 +7,7 @@ import sys
 # ====================================================================
 
 INPUT_FILE = "voice_lines.csv"
-OUTPUT_DIR = "PiperTTS_output"
+OUTPUT_DIR = "Output"
 VOICE_MODEL_NAME = "voice_model"
 DELIMITER = ";"  # Separator for ID;Text in your CSV
 
