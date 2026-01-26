@@ -33,13 +33,21 @@ FFMPEG_SPEED_MULTIPLIER = "1.0"
 # LRA (Loudness Range) is set high to allow for dynamic speech.
 FFMPEG_AUDIO_FILTERS = "pan=stereo|c0=c0|c1=c0,loudnorm=I=-16:TP=-1.0:LRA=11"
 
-# ====================================================================
-# --- END CONFIGURATION ---\
-# ====================================================================
 
 # Executables are assumed to be in the system PATH
 PIPER_EXE = "piper.exe"
 FFMPEG_EXE = "ffmpeg"
+
+# Edit the hardcoded paths if system PATH doesn't work
+# Use the 'r' before the quotes to handle Windows backslashes correctly
+# PIPER_EXE = r"C:\Path\To\Your\piper\piper.exe"
+# FFMPEG_EXE = r"C:\Path\To\Your\ffmpeg\bin\ffmpeg.exe"
+
+# ====================================================================
+# --- END CONFIGURATION ---\
+# ====================================================================
+
+
 
 # Construct paths for files relative to the script's directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
