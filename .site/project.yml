@@ -1,0 +1,7 @@
+type: utility                 # mod | game
+status: released          # released | beta | coming_soon | archived
+gameName: ""
+gameVersions: ""
+modLoader: ""             # e.g. a mod manager or framework name, if any
+distribution:
+  # github_release is added automatically once this repo has a release
