@@ -8,6 +8,7 @@ ECHO.
 :: Execute the Python script
 :: Assuming 'python' command is in your system's PATH
 python piper_batch.py
+pause
 
 ECHO.
 ECHO ===========================================

@@ -1,15 +1,11 @@
 import subprocess
 import os
 import sys
+import glob
 
 # ====================================================================
 # --- CONFIGURATION (Adjust these values) ---
 # ====================================================================
-
-INPUT_FILE = "voice_lines.csv"
-OUTPUT_DIR = "Output"
-VOICE_MODEL_NAME = "voice_model"
-DELIMITER = ";"  # Separator for ID;Text in your CSV
 
 # AUDIO SETTINGS
 # Setting it higher can result in clipping, better use the loudnorm filter instead.
@@ -24,40 +20,46 @@ ENABLE_POST_PROCESSING = True  # Set to True to enable FFmpeg filters
 FFMPEG_SPEED_MULTIPLIER = "1.0"
 
 # FFmpeg Filter Chain
-# 1. pan=stereo...: Converts Mono input to Stereo output.
+# 1. pan=stereo: Converts Mono input to Stereo output.
 # 2. loudnorm: Normalizes to LUFS (integrated loudness) with a true peak ceiling.
-#
-# LOUDNESS TARGETS:
-# I (Integrated Loudness)
-# TP (True Peak) is set to -1.0 dBTP (safe peak ceiling)
-# LRA (Loudness Range) is set high to allow for dynamic speech.
-FFMPEG_AUDIO_FILTERS = "pan=stereo|c0=c0|c1=c0,loudnorm=I=-16:TP=-1.0:LRA=11"
-
+# I=-16: Integrated loudness target set to $-16$ LUFS (standard for many podcast and voice broadcasting standards)
+# TP=-1.0: True Peak ceiling set to $-1.0$ dBTP to prevent inter-sample clipping
+# LRA=11: Loudness Range target, allowing a dynamic range of $11$ LUFS, which keeps speech sounding natural rather than over-compressed
+FFMPEG_AUDIO_FILTERS = "pan=stereo|c0=c0|c1=c0,loudnorm=I=-12:TP=-1.0:LRA=11"
 
 # Executables are assumed to be in the system PATH
 PIPER_EXE = "piper.exe"
 FFMPEG_EXE = "ffmpeg"
 
-# Edit the hardcoded paths if system PATH doesn't work
-# Use the 'r' before the quotes to handle Windows backslashes correctly
-# PIPER_EXE = r"C:\Path\To\Your\piper\piper.exe"
-# FFMPEG_EXE = r"C:\Path\To\Your\ffmpeg\bin\ffmpeg.exe"
-
 # ====================================================================
-# --- END CONFIGURATION ---\
+# --- END CONFIGURATION ---
 # ====================================================================
-
-
 
 # Construct paths for files relative to the script's directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-MODEL_PATH = os.path.join(SCRIPT_DIR, f"{VOICE_MODEL_NAME}.onnx")
-VOICE_MODEL_CONFIG = os.path.join(SCRIPT_DIR, f"{VOICE_MODEL_NAME}.onnx.json")
-OUTPUT_PATH = os.path.join(SCRIPT_DIR, OUTPUT_DIR)
+# Dynamically find any .csv file in the directory
+csv_files = glob.glob(os.path.join(SCRIPT_DIR, "*.csv"))
+if not csv_files:
+    print(f"❌ Error: No .csv file found in {SCRIPT_DIR}")
+    sys.exit(1)
+INPUT_FILE_PATH = csv_files[0]
+INPUT_FILE = os.path.basename(INPUT_FILE_PATH)
 
-INPUT_FILE_PATH = os.path.join(SCRIPT_DIR, INPUT_FILE)
+# Dynamically find any .onnx model file in the directory
+onnx_files = glob.glob(os.path.join(SCRIPT_DIR, "*.onnx"))
+if not onnx_files:
+    print(f"❌ Error: No .onnx model file found in {SCRIPT_DIR}")
+    sys.exit(1)
+MODEL_PATH = onnx_files[0]
+VOICE_MODEL_CONFIG = MODEL_PATH + ".json"
+
+OUTPUT_DIR = "Output"
+OUTPUT_PATH = os.path.join(SCRIPT_DIR, OUTPUT_DIR)
 TEMP_WAV_FILE = os.path.join(OUTPUT_PATH, "temp_output.wav")
+
+# Assuming delimiter defaults to ';' but can be adjusted or inferred
+DELIMITER = ";"
 
 
 def run_synthesis(line_id, text):
@@ -77,7 +79,6 @@ def run_synthesis(line_id, text):
     ]
 
     try:
-        # Pass the text to Piper via stdin
         subprocess.run(
             piper_command,
             input=text.encode('utf-8'),
@@ -89,11 +90,11 @@ def run_synthesis(line_id, text):
         print(f"    ❌ Piper Error (ID: {line_id}): Command failed with error code {e.returncode}")
         print(f"       STDOUT: {e.stdout.decode()}")
         print(f"       STDERR: {e.stderr.decode()}")
-        return False
+        sys.exit(1)
     except FileNotFoundError:
         print(f"    ❌ Piper Error: Executable '{PIPER_EXE}' not found.")
         print("       Please ensure the directory containing 'piper.exe' is added to your system's PATH environment variable.")
-        return False
+        sys.exit(1)
 
     if not ENABLE_POST_PROCESSING:
         try:
@@ -101,21 +102,18 @@ def run_synthesis(line_id, text):
             return True
         except Exception as e:
             print(f"    ❌ File Error: Could not rename temporary file to {final_output_path}. {e}")
-            return False
+            sys.exit(1)
 
-    # --- 2. FFmpeg Post-Processing Command (outputs to final path) ---
-
-    # Dynamically prepend atempo filter if speed is adjusted
+    # --- 2. FFmpeg Post-Processing Command ---
     speed_filter = ""
     if FFMPEG_SPEED_MULTIPLIER != "1.0":
         speed_filter = f"atempo={FFMPEG_SPEED_MULTIPLIER},"
 
-    # Combine speed filter with existing filters
     full_filter_chain = speed_filter + FFMPEG_AUDIO_FILTERS
 
     ffmpeg_command = [
         FFMPEG_EXE,
-        "-y",  # Overwrite output file without asking
+        "-y",
         "-i", TEMP_WAV_FILE,
         "-filter:a", full_filter_chain,
         final_output_path
@@ -127,29 +125,25 @@ def run_synthesis(line_id, text):
             capture_output=True,
             check=True
         )
-        # Clean up the temporary file after successful processing
-        os.remove(TEMP_WAV_FILE)
+        if os.path.exists(TEMP_WAV_FILE):
+            os.remove(TEMP_WAV_FILE)
         return True
     except subprocess.CalledProcessError as e:
         print(f"    ❌ FFmpeg Error (ID: {line_id}): Command failed with error code {e.returncode}")
         print(f"       STDOUT: {e.stdout.decode()}")
         print(f"       STDERR: {e.stderr.decode()}")
-        # Attempt to clean up temp file even if FFmpeg failed
         if os.path.exists(TEMP_WAV_FILE):
             os.remove(TEMP_WAV_FILE)
-        return False
+        sys.exit(1)
     except FileNotFoundError:
         print(f"    ❌ FFmpeg Error: Executable '{FFMPEG_EXE}' not found.")
-        print("       Please ensure the FFmpeg directory is added to your system's PATH environment variable.")
+        print("         Please ensure the FFmpeg directory is added to your system's PATH environment variable.\nOr add the ffmpeg.exe in the root of this folder.")
         if os.path.exists(TEMP_WAV_FILE):
             os.remove(TEMP_WAV_FILE)
-        return False
+        sys.exit(1)
 
 
 def main():
-    """
-    Main function to read the input file and process each line.
-    """
     print("=" * 43)
     print("Starting Piper Batch Script...")
     print("=" * 43)
@@ -158,23 +152,12 @@ def main():
         os.makedirs(OUTPUT_PATH)
         print(f"Created output directory: {OUTPUT_PATH}")
 
-    # --- Check for required model files (Executables are now assumed to be in PATH) ---
-    if not os.path.exists(MODEL_PATH):
-        print(f"❌ Error: Model file not found.")
-        print(f"       Looking for: {MODEL_PATH}")
-        sys.exit(1)
-
     if not os.path.exists(VOICE_MODEL_CONFIG):
-        print(f"❌ Error: Config file not found.")
-        print(f"       Looking for: {VOICE_MODEL_CONFIG}")
+        print(f"❌ Error: Config file not found for model: {VOICE_MODEL_CONFIG}")
         sys.exit(1)
-
-    if not os.path.exists(INPUT_FILE_PATH):
-        print(f"❌ Error: Input file '{INPUT_FILE_PATH}' not found. Please ensure the CSV file is present.")
-        sys.exit(1)
-    # --- End Checks ---
 
     print(f"✅ Found Model: {os.path.basename(MODEL_PATH)}")
+    print(f"✅ Found Input File: {INPUT_FILE}")
 
     try:
         line_count = 0
@@ -187,8 +170,6 @@ def main():
 
         for line in lines:
             line_count += 1
-
-            # Using rstrip() to handle potential Windows/Unix line endings
             parts = line.rstrip('\r\n').split(DELIMITER, 1)
 
             if len(parts) < 2:
